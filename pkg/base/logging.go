@@ -63,13 +63,15 @@ func GetLogger(cmd *cobra.Command, w io.Writer) (*slog.Logger, error) {
 		return nil, err
 	}
 
-	logFormat, found := parseLogHandler(logFormatFlag)
+	format, found := parseLogHandler(logFormatFlag)
 	if !found {
 		return nil, fmt.Errorf("invalid logFormat value %s", logFormatFlag)
 	}
 
 	var level slog.Leveler
 	switch logLevelFlag {
+	case "error":
+		level = slog.LevelError
 	case "warn":
 		level = slog.LevelWarn
 	case "info":
@@ -80,7 +82,7 @@ func GetLogger(cmd *cobra.Command, w io.Writer) (*slog.Logger, error) {
 		level = slog.LevelInfo
 	}
 
-	switch logFormat {
+	switch format {
 	case defaultLogFormat:
 		return slog.New(slog.NewTextHandler(w, &slog.HandlerOptions{Level: level})), nil
 	case textLogFormat:

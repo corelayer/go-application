@@ -17,24 +17,37 @@
 package base
 
 import (
+	"fmt"
 	"log/slog"
+	"os"
 
 	"github.com/spf13/cobra"
 )
 
 func NewApplication(use string, short string, long string, version string) *Application {
-	a := &Application{}
+	app := &Application{}
 
 	command := &cobra.Command{
-		Use:     use,
-		Short:   short,
-		Long:    long,
-		Args:    cobra.MinimumNArgs(1),
-		Version: version,
+		Use:               use,
+		Short:             short,
+		Long:              long,
+		Args:              cobra.MinimumNArgs(1),
+		Version:           version,
+		PersistentPreRunE: executePreRunE,
 	}
 
-	a.Command = command
-	return a
+	var logEnabledFlag bool
+	var logLevelFlag string
+	var logLevelFormat string
+	var logTarget string
+
+	command.PersistentFlags().BoolVarP(&logEnabledFlag, "log", "l", false, "log")
+	command.PersistentFlags().StringVarP(&logLevelFlag, "loglevel", "", "error", "log level")
+	command.PersistentFlags().StringVarP(&logLevelFormat, "logformat", "", "json", "log format")
+	command.PersistentFlags().StringVarP(&logTarget, "logtarget", "", "console", "log target")
+
+	app.Command = command
+	return app
 }
 
 type Application struct {
@@ -51,6 +64,24 @@ func (a *Application) Run() error {
 	if err := a.Command.Execute(); err != nil {
 		slog.Error("application terminated unexpectedly", "application", a.Command.Name(), "error", err)
 		return err
+	}
+	return nil
+}
+
+func executePreRunE(cmd *cobra.Command, args []string) error {
+	var (
+		err    error
+		logger *slog.Logger
+	)
+	fmt.Println("PRE RUN")
+
+	logger, err = GetLogger(cmd, os.Stdout)
+	if err != nil {
+		return err
+	}
+
+	if logger != nil {
+		slog.SetDefault(logger)
 	}
 	return nil
 }
