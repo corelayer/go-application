@@ -51,6 +51,9 @@ func GetLogger(cmd *cobra.Command, w io.Writer) (*slog.Logger, error) {
 
 		format logFormat
 		found  bool
+
+		level  slog.Leveler
+		source bool
 	)
 
 	logFlag, err = cmd.Flags().GetBool("log")
@@ -76,7 +79,6 @@ func GetLogger(cmd *cobra.Command, w io.Writer) (*slog.Logger, error) {
 		return nil, fmt.Errorf("invalid logFormat value %s", logFormatFlag)
 	}
 
-	var level slog.Leveler
 	switch logLevelFlag {
 	case "error":
 		level = slog.LevelError
@@ -90,13 +92,17 @@ func GetLogger(cmd *cobra.Command, w io.Writer) (*slog.Logger, error) {
 		level = slog.LevelInfo
 	}
 
+	if level == slog.LevelDebug {
+		source = true
+	}
+
 	switch format {
 	case defaultLogFormat:
-		return slog.New(slog.NewTextHandler(w, &slog.HandlerOptions{Level: level})), nil
+		return slog.New(slog.NewTextHandler(w, &slog.HandlerOptions{Level: level, AddSource: source})), nil
 	case textLogFormat:
-		return slog.New(slog.NewTextHandler(w, &slog.HandlerOptions{Level: level})), nil
+		return slog.New(slog.NewTextHandler(w, &slog.HandlerOptions{Level: level, AddSource: source})), nil
 	case jsonLogFormat:
-		return slog.New(slog.NewJSONHandler(w, &slog.HandlerOptions{Level: level})), nil
+		return slog.New(slog.NewJSONHandler(w, &slog.HandlerOptions{Level: level, AddSource: source})), nil
 	}
 	return nil, err
 }
