@@ -42,17 +42,15 @@ var logFormats = map[string]logFormat{
 	"json": jsonLogFormat,
 }
 
-func parseLogHandler(s string) (logFormat, bool) {
-	c, ok := logFormats[strings.ToLower(s)]
-	return c, ok
-}
-
 func GetLogger(cmd *cobra.Command, w io.Writer) (*slog.Logger, error) {
 	var (
 		err           error
 		logFlag       bool
 		logLevelFlag  string
 		logFormatFlag string
+
+		format logFormat
+		found  bool
 	)
 
 	logFlag, err = cmd.Flags().GetBool("log")
@@ -61,7 +59,7 @@ func GetLogger(cmd *cobra.Command, w io.Writer) (*slog.Logger, error) {
 	}
 
 	if !logFlag {
-		return nil, nil
+		return slog.New(slog.NewTextHandler(io.Discard, nil)), nil
 	}
 
 	logLevelFlag, err = cmd.Flags().GetString("loglevel")
@@ -73,7 +71,7 @@ func GetLogger(cmd *cobra.Command, w io.Writer) (*slog.Logger, error) {
 		return nil, err
 	}
 
-	format, found := parseLogHandler(logFormatFlag)
+	format, found = parseLogHandler(logFormatFlag)
 	if !found {
 		return nil, fmt.Errorf("invalid logFormat value %s", logFormatFlag)
 	}
@@ -101,4 +99,9 @@ func GetLogger(cmd *cobra.Command, w io.Writer) (*slog.Logger, error) {
 		return slog.New(slog.NewJSONHandler(w, &slog.HandlerOptions{Level: level})), nil
 	}
 	return nil, err
+}
+
+func parseLogHandler(s string) (logFormat, bool) {
+	c, ok := logFormats[strings.ToLower(s)]
+	return c, ok
 }

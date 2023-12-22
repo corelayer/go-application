@@ -17,7 +17,6 @@
 package base
 
 import (
-	"fmt"
 	"log/slog"
 	"os"
 
@@ -31,22 +30,23 @@ func NewApplication(use string, short string, long string, version string) *Appl
 		Use:               use,
 		Short:             short,
 		Long:              long,
-		Args:              cobra.MinimumNArgs(1),
+		Args:              cobra.MinimumNArgs(1), // Always make sure a sub command is run
 		Version:           version,
 		PersistentPreRunE: executePreRunE,
 	}
 
+	// Configure log flags
 	var logEnabledFlag bool
 	var logLevelFlag string
-	var logLevelFormat string
-	var logTarget string
+	var logFormatFlag string
 
 	command.PersistentFlags().BoolVarP(&logEnabledFlag, "log", "l", false, "log")
-	command.PersistentFlags().StringVarP(&logLevelFlag, "loglevel", "", "error", "log level")
-	command.PersistentFlags().StringVarP(&logLevelFormat, "logformat", "", "json", "log format")
-	command.PersistentFlags().StringVarP(&logTarget, "logtarget", "", "console", "log target")
+	command.PersistentFlags().StringVarP(&logLevelFlag, "loglevel", "", "error", "[error|warn|info|debug]")
+	command.PersistentFlags().StringVarP(&logFormatFlag, "logformat", "", "json", "[json|text]")
 
+	// Assign cobra.Command to application
 	app.Command = command
+
 	return app
 }
 
@@ -69,19 +69,11 @@ func (a *Application) Run() error {
 }
 
 func executePreRunE(cmd *cobra.Command, args []string) error {
-	var (
-		err    error
-		logger *slog.Logger
-	)
-	fmt.Println("PRE RUN")
-
-	logger, err = GetLogger(cmd, os.Stdout)
+	logger, err := GetLogger(cmd, os.Stdout)
 	if err != nil {
 		return err
 	}
 
-	if logger != nil {
-		slog.SetDefault(logger)
-	}
+	slog.SetDefault(logger)
 	return nil
 }
