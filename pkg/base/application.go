@@ -49,7 +49,7 @@ func (a *Application) RegisterCommands(c []Commander) {
 
 func (a *Application) Run() error {
 	if err := a.Command.Execute(); err != nil {
-		slog.Error("application terminated unexpectedly", "name", a.Command.Name(), "error", err)
+		slog.Error("application terminated unexpectedly", "application", a.Command.Name(), "error", err)
 		return err
 	}
 	return nil
