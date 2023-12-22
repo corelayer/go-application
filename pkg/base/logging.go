@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -105,6 +106,30 @@ func GetLogger(cmd *cobra.Command, w io.Writer) (*slog.Logger, error) {
 		return slog.New(slog.NewJSONHandler(w, &slog.HandlerOptions{Level: level, AddSource: source})), nil
 	}
 	return nil, err
+}
+
+func getLogWriter(cmd *cobra.Command) (io.ReadWriteCloser, error) {
+	var (
+		err           error
+		logTargetFlag string
+
+		w io.ReadWriteCloser
+	)
+	logTargetFlag, err = cmd.Flags().GetString("logtarget")
+	if err != nil {
+		return nil, err
+	}
+
+	if strings.ToLower(logTargetFlag) == "console" {
+		return os.Stderr, nil
+	}
+
+	w, err = os.OpenFile(logTargetFlag, os.O_RDWR|os.O_CREATE, 0755)
+	if err != nil {
+		return nil, err
+	}
+	return w, nil
+
 }
 
 func parseLogHandler(s string) (logFormat, bool) {

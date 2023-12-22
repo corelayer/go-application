@@ -18,12 +18,15 @@ package sub
 
 import (
 	"fmt"
+	"io"
 	"log/slog"
 
 	"github.com/spf13/cobra"
 
 	"github.com/corelayer/go-application/pkg/base"
 )
+
+var logFile io.ReadWriteCloser
 
 var Command = base.Command{
 	Cobra: &cobra.Command{

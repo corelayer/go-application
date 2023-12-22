@@ -17,32 +17,38 @@
 package base
 
 import (
+	"io"
 	"log/slog"
-	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
+
+var logTarget io.ReadWriteCloser
 
 func NewApplication(use string, short string, long string, version string) *Application {
 	app := &Application{}
 
 	command := &cobra.Command{
-		Use:               use,
-		Short:             short,
-		Long:              long,
-		Args:              cobra.MinimumNArgs(1), // Always make sure a sub command is run
-		Version:           version,
-		PersistentPreRunE: executePreRunE,
+		Use:                use,
+		Short:              short,
+		Long:               long,
+		Args:               cobra.MinimumNArgs(1), // Always make sure a sub command is run
+		Version:            version,
+		PersistentPreRunE:  executePreRunE,
+		PersistentPostRunE: executePostRunE,
 	}
 
 	// Configure log flags
 	var logEnabledFlag bool
 	var logLevelFlag string
 	var logFormatFlag string
+	var logTargetFlag string
 
 	command.PersistentFlags().BoolVarP(&logEnabledFlag, "log", "l", false, "log")
 	command.PersistentFlags().StringVarP(&logLevelFlag, "loglevel", "", "error", "[error|warn|info|debug]")
 	command.PersistentFlags().StringVarP(&logFormatFlag, "logformat", "", "json", "[json|text]")
+	command.PersistentFlags().StringVarP(&logTargetFlag, "logtarget", "", "console", "[console|file] (default: console)")
 
 	// Assign cobra.Command to application
 	app.Command = command
@@ -68,12 +74,50 @@ func (a *Application) Run() error {
 	return nil
 }
 
+// This behavior can be overwritten by subcommands if required
 func executePreRunE(cmd *cobra.Command, args []string) error {
-	logger, err := GetLogger(cmd, os.Stdout)
+	var (
+		err    error
+		logger *slog.Logger
+	)
+
+	logTarget, err = getLogWriter(cmd)
+	if err != nil {
+		return err
+	}
+
+	logger, err = GetLogger(cmd, logTarget)
 	if err != nil {
 		return err
 	}
 
 	slog.SetDefault(logger)
+	return nil
+}
+
+// This behavior can be overwritten by subcommands if required
+func executePostRunE(cmd *cobra.Command, args []string) error {
+	var (
+		err           error
+		logTargetFlag string
+	)
+	logTargetFlag, err = cmd.Flags().GetString("logtarget")
+	if err != nil {
+		return err
+	}
+
+	// When logging to console, there is no file to close (os.StdErr)
+	if strings.ToLower(logTargetFlag) == "console" {
+		return nil
+	}
+
+	// Defer closing of log file
+	defer func(target io.ReadWriteCloser, err error) {
+		err = target.Close()
+	}(logTarget, err)
+
+	if err != nil {
+		return err
+	}
 	return nil
 }
