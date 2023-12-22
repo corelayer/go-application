@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 #/*
 # * Copyright 2023 CoreLayer BV
 # *
@@ -14,14 +15,4 @@
 # *    limitations under the License.
 # */
 
-clean:
-	bash scripts/clean.sh
-
-coverage:
-	bash scripts/coverage.sh
-
-test:
-	bash scripts/test.sh
-
-run-example1:
-	 bash scripts/run-example1.sh
+go run examples/cmd/example1/main.go
