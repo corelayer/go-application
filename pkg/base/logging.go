@@ -50,9 +50,19 @@ func parseLogHandler(s string) (logFormat, bool) {
 func GetLogger(cmd *cobra.Command, w io.Writer) (*slog.Logger, error) {
 	var (
 		err           error
+		logFlag       bool
 		logLevelFlag  string
 		logFormatFlag string
 	)
+
+	logFlag, err = cmd.Flags().GetBool("log")
+	if err != nil {
+		return nil, err
+	}
+
+	if !logFlag {
+		return nil, nil
+	}
 
 	logLevelFlag, err = cmd.Flags().GetString("loglevel")
 	if err != nil {
