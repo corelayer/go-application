@@ -108,23 +108,19 @@ func GetLogger(cmd *cobra.Command, w io.Writer) (*slog.Logger, error) {
 	return nil, err
 }
 
-func getLogWriter(cmd *cobra.Command) (io.ReadWriteCloser, error) {
+func getLogWriter(s string) (io.ReadWriteCloser, error) {
 	var (
-		err           error
-		logTargetFlag string
-
-		w io.ReadWriteCloser
+		err error
+		w   io.ReadWriteCloser
 	)
-	logTargetFlag, err = cmd.Flags().GetString("logtarget")
-	if err != nil {
-		return nil, err
-	}
 
-	if strings.ToLower(logTargetFlag) == "console" {
+	// Use os.Stderr when log needs to be sent to the console
+	if strings.ToLower(s) == "console" {
 		return os.Stderr, nil
 	}
 
-	w, err = os.OpenFile(logTargetFlag, os.O_RDWR|os.O_CREATE, 0755)
+	// Open the target if the log needs to be sent to a file
+	w, err = os.OpenFile(s, os.O_RDWR|os.O_CREATE, 0755)
 	if err != nil {
 		return nil, err
 	}

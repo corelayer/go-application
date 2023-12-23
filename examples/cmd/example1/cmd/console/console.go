@@ -14,11 +14,10 @@
  *    limitations under the License.
  */
 
-package sub
+package console
 
 import (
 	"fmt"
-	"io"
 	"log/slog"
 
 	"github.com/spf13/cobra"
@@ -26,23 +25,31 @@ import (
 	"github.com/corelayer/go-application/pkg/base"
 )
 
-var logFile io.ReadWriteCloser
-
 var Command = base.Command{
 	Cobra: &cobra.Command{
-		Use:           "sub",
-		Short:         "sub mode",
-		Long:          "example 1 - sub mode",
+		Use:           "console",
+		Short:         "console mode",
+		Long:          "example 1 - console mode",
 		RunE:          execute,
+		PreRunE:       executePreRun,
 		SilenceErrors: true,
 		SilenceUsage:  true,
+		// Command annotation "logtarget" can be set on a sub-command to enforce logging to a file
+		Annotations: map[string]string{
+			"logtarget": "console.log",
+		},
 	},
 	SubCommands: nil,
 }
 
+func executePreRun(cmd *cobra.Command, args []string) error {
+	fmt.Println("CONSOLE PRE RUN")
+	return nil
+}
+
 func execute(cmd *cobra.Command, args []string) error {
 	fmt.Println("CONSOLE")
-	slog.Info("INFO")
-	slog.Error("ERROR")
+	slog.Info("CONSOLE INFO")
+	slog.Error("CONSOLE ERROR")
 	return nil
 }

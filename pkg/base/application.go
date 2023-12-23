@@ -33,7 +33,7 @@ func NewApplication(use string, short string, long string, version string) *Appl
 		Use:                use,
 		Short:              short,
 		Long:               long,
-		Args:               cobra.MinimumNArgs(1), // Always make sure a sub command is run
+		Args:               cobra.MinimumNArgs(1), // Always make sure a console command is run
 		Version:            version,
 		PersistentPreRunE:  executePreRunE,
 		PersistentPostRunE: executePostRunE,
@@ -75,13 +75,24 @@ func (a *Application) Run() error {
 }
 
 // This behavior can be overwritten by subcommands if required
+// Command annotation "logtarget" can be set on a sub-command to enforce logging to a file
 func executePreRunE(cmd *cobra.Command, args []string) error {
 	var (
-		err    error
-		logger *slog.Logger
+		err           error
+		logTargetFlag string
+		logger        *slog.Logger
 	)
 
-	logTarget, err = getLogWriter(cmd)
+	if target, found := cmd.Annotations["logtarget"]; found {
+		logTargetFlag = target
+	} else {
+		logTargetFlag, err = cmd.Flags().GetString("logtarget")
+		if err != nil {
+			return err
+		}
+	}
+
+	logTarget, err = getLogWriter(logTargetFlag)
 	if err != nil {
 		return err
 	}
@@ -96,14 +107,20 @@ func executePreRunE(cmd *cobra.Command, args []string) error {
 }
 
 // This behavior can be overwritten by subcommands if required
+// Command annotation "logtarget" can be set on a sub-command to enforce logging to a file
 func executePostRunE(cmd *cobra.Command, args []string) error {
 	var (
 		err           error
 		logTargetFlag string
 	)
-	logTargetFlag, err = cmd.Flags().GetString("logtarget")
-	if err != nil {
-		return err
+
+	if target, found := cmd.Annotations["logtarget"]; found {
+		logTargetFlag = target
+	} else {
+		logTargetFlag, err = cmd.Flags().GetString("logtarget")
+		if err != nil {
+			return err
+		}
 	}
 
 	// When logging to console, there is no file to close (os.StdErr)
@@ -111,7 +128,7 @@ func executePostRunE(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	// Defer closing of log file
+	// Defer closing of global log file variable "logTarget"
 	defer func(target io.ReadWriteCloser, err error) {
 		err = target.Close()
 	}(logTarget, err)

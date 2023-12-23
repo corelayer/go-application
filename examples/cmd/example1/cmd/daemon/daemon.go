@@ -14,35 +14,38 @@
  *    limitations under the License.
  */
 
-package main
+package daemon
 
 import (
-	"os"
+	"fmt"
+	"log/slog"
 
-	"github.com/corelayer/go-application/examples/cmd/example1/cmd/console"
-	"github.com/corelayer/go-application/examples/cmd/example1/cmd/daemon"
+	"github.com/spf13/cobra"
+
 	"github.com/corelayer/go-application/pkg/base"
 )
 
-const (
-	APPLICATION_NAME   = "example1"
-	APPLICATION_TITLE  = "example 1 title"
-	APPLICATION_BANNER = "example 1 banner"
-)
-
-func main() {
-	if err := run(); err != nil {
-		os.Exit(1)
-	}
+var Command = base.Command{
+	Cobra: &cobra.Command{
+		Use:           "daemon",
+		Short:         "daemon mode",
+		Long:          "example 1 - daemon mode",
+		RunE:          execute,
+		PreRunE:       executePreRun,
+		SilenceErrors: true,
+		SilenceUsage:  true,
+	},
+	SubCommands: nil,
 }
 
-func run() error {
-	// var err error
-	app := base.NewApplication(APPLICATION_NAME, APPLICATION_TITLE, APPLICATION_BANNER, "")
+func executePreRun(cmd *cobra.Command, args []string) error {
+	fmt.Println("DAEMON PRE RUN")
+	return nil
+}
 
-	app.RegisterCommands([]base.Commander{
-		console.Command,
-		daemon.Command,
-	})
-	return app.Run()
+func execute(cmd *cobra.Command, args []string) error {
+	fmt.Println("DAEMON")
+	slog.Info("DAEMON INFO")
+	slog.Error("DAEMON ERROR")
+	return nil
 }
