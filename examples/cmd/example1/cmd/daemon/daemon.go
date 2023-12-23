@@ -36,6 +36,7 @@ var Command = base.Command{
 		SilenceUsage:  true,
 	},
 	SubCommands: nil,
+	Configure:   daemon,
 }
 
 func executePreRun(cmd *cobra.Command, args []string) error {
@@ -48,4 +49,9 @@ func execute(cmd *cobra.Command, args []string) error {
 	slog.Info("DAEMON INFO")
 	slog.Error("DAEMON ERROR")
 	return nil
+}
+
+func daemon(cmd *cobra.Command) {
+	fmt.Println("daemon")
+	base.AddLogTargetFlag(cmd)
 }

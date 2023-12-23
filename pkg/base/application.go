@@ -43,13 +43,10 @@ func NewApplication(use string, short string, long string, version string) *Appl
 	var logEnabledFlag bool
 	var logLevelFlag string
 	var logFormatFlag string
-	var logTargetFlag string
 
 	command.PersistentFlags().BoolVarP(&logEnabledFlag, "log", "l", false, "log")
 	command.PersistentFlags().StringVarP(&logLevelFlag, "loglevel", "", "error", "[error|warn|info|debug]")
 	command.PersistentFlags().StringVarP(&logFormatFlag, "logformat", "", "json", "[json|text]")
-	command.PersistentFlags().StringVarP(&logTargetFlag, "logtarget", "", "console", "[console|file] (default: console)")
-
 	// Assign cobra.Command to application
 	app.Command = command
 
@@ -88,7 +85,7 @@ func executePreRunE(cmd *cobra.Command, args []string) error {
 	} else {
 		logTargetFlag, err = cmd.Flags().GetString("logtarget")
 		if err != nil {
-			return err
+			logTargetFlag = "console"
 		}
 	}
 

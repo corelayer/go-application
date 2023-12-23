@@ -25,10 +25,16 @@ import (
 type Command struct {
 	Cobra       *cobra.Command
 	SubCommands []Commander
+	Configure   func(cmd *cobra.Command)
 }
 
 func (c Command) Initialize() *cobra.Command {
 	slog.Debug("initializing command", "command", c.Cobra.Name())
+
+	if c.Configure != nil {
+		c.Configure(c.Cobra)
+	}
+
 	for _, subCmd := range c.SubCommands {
 		c.Cobra.AddCommand(subCmd.Initialize())
 	}

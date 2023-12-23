@@ -40,6 +40,7 @@ var Command = base.Command{
 		},
 	},
 	SubCommands: nil,
+	Configure:   configure,
 }
 
 func executePreRun(cmd *cobra.Command, args []string) error {
@@ -52,4 +53,8 @@ func execute(cmd *cobra.Command, args []string) error {
 	slog.Info("CONSOLE INFO")
 	slog.Error("CONSOLE ERROR")
 	return nil
+}
+
+func configure(cmd *cobra.Command) {
+	fmt.Println("console")
 }
