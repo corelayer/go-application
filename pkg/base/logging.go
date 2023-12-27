@@ -130,7 +130,7 @@ func getLogWriter(s string) (io.ReadWriteCloser, error) {
 	}
 
 	// Open the target if the log needs to be sent to a file
-	w, err = os.OpenFile(s, os.O_APPEND|os.O_CREATE, 0755)
+	w, err = os.OpenFile(s, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return nil, err
 	}
