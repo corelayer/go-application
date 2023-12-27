@@ -43,7 +43,7 @@ var logFormats = map[string]logFormat{
 	"json": jsonLogFormat,
 }
 
-// Flag "logtarget" can be added to subcommands to enable specification of the log target
+// AddLogTargetFlag Flag "logtarget" can be added to subcommands to enable specification of the log target
 // It is not added to the root command by default, as it cannot be hidden from subcommands that want to override the behavior
 // For more details, check "example1"
 // If added, logs are sent to the console by default, unless a file is specified
