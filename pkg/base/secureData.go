@@ -112,7 +112,7 @@ func (d *SecureData) getCryptoConfig(master string) (sio.Config, error) {
 		err          error
 		masterKey    []byte
 		nonce        []byte
-		key          []byte
+		key          [32]byte
 		cipherSuites []byte
 	)
 
@@ -127,7 +127,7 @@ func (d *SecureData) getCryptoConfig(master string) (sio.Config, error) {
 	}
 
 	kdf := hkdf.New(sha256.New, masterKey, nonce, nil)
-	if _, err = io.ReadFull(kdf, key); err != nil {
+	if _, err = io.ReadFull(kdf, key[:]); err != nil {
 		return sio.Config{}, fmt.Errorf("failed to derive encryption key: %w", err)
 	}
 
@@ -136,7 +136,7 @@ func (d *SecureData) getCryptoConfig(master string) (sio.Config, error) {
 		return sio.Config{}, err
 	}
 
-	return sio.Config{Key: key, CipherSuites: cipherSuites}, nil
+	return sio.Config{Key: key[:], CipherSuites: cipherSuites}, nil
 }
 
 func (d *SecureData) getNonce() ([]byte, error) {
