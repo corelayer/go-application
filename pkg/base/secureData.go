@@ -29,9 +29,9 @@ import (
 )
 
 type SecureData struct {
-	Nonce       string `mapstructure:"nonce"`
-	CipherSuite string `mapstructure:"ciphersuite"`
-	Data        string `mapstructure:"data"`
+	Nonce       string `json:"nonce" yaml:"nonce" mapstructure:"nonce"`
+	CipherSuite string `json:"ciphersuite" yaml:"ciphersuite" mapstructure:"ciphersuite"`
+	HexData     string `json:"hexdata" yaml:"hexdata" mapstructure:"hexdata"`
 }
 
 func (d *SecureData) Encrypt(master string) error {
@@ -46,7 +46,7 @@ func (d *SecureData) Encrypt(master string) error {
 		return fmt.Errorf("could not initialize crypto parameters: %w", err)
 	}
 
-	source, err = hex.DecodeString(d.Data)
+	source, err = d.Bytes()
 	if err != nil {
 		return fmt.Errorf("failed to decode data: %w", err)
 	}
@@ -57,7 +57,7 @@ func (d *SecureData) Encrypt(master string) error {
 		return fmt.Errorf("failed to encrypt data: %w", err)
 	}
 
-	d.Data = hex.EncodeToString(encryptedData.Bytes())
+	d.HexData = hex.EncodeToString(encryptedData.Bytes())
 	return nil
 }
 
@@ -68,12 +68,16 @@ func (d *SecureData) Decrypt(master string) error {
 		cryptoConfig sio.Config
 	)
 
+	if d.Nonce == "" {
+		return fmt.Errorf("nonce is not set, cannot decrypt")
+	}
+
 	cryptoConfig, err = d.getCryptoConfig(master)
 	if err != nil {
 		return fmt.Errorf("could not initialize crypto parameters: %w", err)
 	}
 
-	source, err = hex.DecodeString(d.Data)
+	source, err = d.Bytes()
 	if err != nil {
 		return fmt.Errorf("failed to decode data: %w", err)
 	}
@@ -84,8 +88,23 @@ func (d *SecureData) Decrypt(master string) error {
 		return fmt.Errorf("failed to decrypt data: %w", err)
 	}
 
-	d.Data = hex.EncodeToString(decryptedData.Bytes())
+	// Reset nonce after decryption, to make sure it gets rotated on next encryption
+	d.resetNonce()
+	d.HexData = hex.EncodeToString(decryptedData.Bytes())
 	return nil
+}
+
+func (d *SecureData) Update(data []byte) error {
+	if d.Nonce != "" {
+		return fmt.Errorf("cannot update encrypted data")
+	}
+
+	d.HexData = hex.EncodeToString(data)
+	return nil
+}
+
+func (d *SecureData) Bytes() ([]byte, error) {
+	return hex.DecodeString(d.HexData)
 }
 
 func (d *SecureData) getCryptoConfig(master string) (sio.Config, error) {
@@ -131,6 +150,10 @@ func (d *SecureData) getNonce() ([]byte, error) {
 	}
 	d.Nonce = hex.EncodeToString(nonce[:])
 	return nonce[:], nil
+}
+
+func (d *SecureData) resetNonce() {
+	d.Nonce = ""
 }
 
 func (d *SecureData) getCipherSuite() ([]byte, error) {
