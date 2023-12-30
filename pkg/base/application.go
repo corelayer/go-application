@@ -86,6 +86,7 @@ func executePreRunE(cmd *cobra.Command, args []string) error {
 		logTargetFlag, err = cmd.Flags().GetString("logtarget")
 		if err != nil {
 			logTargetFlag = "console"
+			err = nil
 		}
 	}
 

@@ -18,16 +18,33 @@ package base
 
 import (
 	"log/slog"
+	"path/filepath"
 	"strings"
 
 	"github.com/spf13/viper"
 )
 
-func NewConfiguration(filename string, path string, searchPaths []string) Configuration {
+func NewConfiguration(file string, searchPaths []string) Configuration {
+	// Clean search paths
+	paths := make([]string, 0)
+	for _, p := range searchPaths {
+		if !strings.Contains(p, "..") {
+			paths = append(paths, filepath.Clean(p))
+		}
+	}
+
+	// Split file into path and filename
+	path, filename := filepath.Split(file)
+
+	// Make sure to clean path, this also causes the path to either be "." or a full path
+	if path != "" {
+		path = filepath.Clean(path)
+	}
+
 	c := Configuration{
 		filename: filename,
 		path:     path,
-		paths:    searchPaths,
+		paths:    paths,
 	}
 
 	return c
@@ -39,25 +56,34 @@ type Configuration struct {
 	paths    []string
 }
 
-func (c Configuration) getViperConfig() (string, string) {
-	parts := strings.Split(c.filename, ".")
-	if len(parts) < 2 {
-		parts = append(parts, "yaml")
-		slog.Debug("could not split filename, adding yaml", "filename", c.filename, "parts", parts)
+func (c Configuration) GetViperConfig() (string, string) {
+	var (
+		configName string
+		configType string
+	)
+
+	fileExtension := filepath.Ext(c.filename)
+	if fileExtension == "" {
+		configType = "yaml"
+	} else {
+		configType = strings.TrimPrefix(fileExtension, ".")
 	}
-	slog.Debug("getting config file", "parts", parts)
-	return parts[0], parts[1]
+
+	configName = strings.TrimSuffix(c.filename, fileExtension)
+
+	return configName, configType
 }
 
 func (c Configuration) GetViper() *viper.Viper {
 	v := viper.New()
 
+	// If a full path is specified, set the config file to that path
 	if c.path != "" {
-		fullPath := c.path + "/" + c.filename
+		fullPath := filepath.Join(c.path, c.filename)
 		slog.Debug("setting config file", "file", fullPath)
 		v.SetConfigFile(fullPath)
 	} else {
-		configName, configType := c.getViperConfig()
+		configName, configType := c.GetViperConfig()
 		slog.Debug("setting config name", "name", configName)
 		v.SetConfigName(configName)
 		slog.Debug("setting config type", "type", configType)
