@@ -117,7 +117,8 @@ func executePostRunE(cmd *cobra.Command, args []string) error {
 	} else {
 		logTargetFlag, err = cmd.Flags().GetString("logtarget")
 		if err != nil {
-			return err
+			logTargetFlag = "console"
+			err = nil
 		}
 	}
 
